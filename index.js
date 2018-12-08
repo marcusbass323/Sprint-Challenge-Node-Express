@@ -12,7 +12,7 @@ server.use(
 
 //ENDPOINTS
 
-//GET ENDPOINT
+//GET REQUEST
 server.get('/projects', (req, res) => {
     db.get()
         .then(projects => {
@@ -24,6 +24,50 @@ server.get('/projects', (req, res) => {
             .json({
                 message: "Cound not fetch the projects."
             })
+        })
+})
+
+// GET REQUEST BY ID
+server.get('./projects/:id', (req, res) => {
+    const { project_id } = req.params;
+    db.id(project_id)
+        .then(projects => {
+            if (projects) {
+                res
+                    .json(projects);
+            } else {
+                res
+                    .status(500)
+                    .json({error: "User cannot be found"})
+            }
+        })
+        .catch(err => {
+            res 
+                .status(404)
+                .json({message: ""})
+            
+        })
+})
+
+//DELETE REQUEST
+server.delete('/projecs/:id', (req, res) => {
+    const { id } = req.params;
+    console.log('id', id);
+    db.remove(id)
+        .then(count => {
+            if (count) {
+                res
+                .json({message: "Successfully Deleted"})
+            } else {
+                res
+                    .status(404)
+                    .json({message: "This user cannot be deleted"})
+        }
+        })
+        .catch(err => {
+            res
+                .status(500)
+                .json({error: "Post can't be deleted"})
         })
 })
 
