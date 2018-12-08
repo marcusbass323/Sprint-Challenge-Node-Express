@@ -1,0 +1,18 @@
+{
+	"name": "node-express",
+	"version": "1.0.0",
+	"description": "Sprint Challenge Node Express",
+	"private": true,
+	"main": "index.js",
+	"scripts": {
+		"start": "nodemon index.js"
+	},
+	"license": "ISC",
+	"dependencies": {
+		"express": "^4.16.4",
+		"knex": "^0.15.2"
+	},
+	"devDependencies": {
+		"nodemon": "^1.18.7"
+	}
+}
