@@ -2,8 +2,10 @@ const express = require('express');
 const server = express();
 const helmet = require('helmet');
 const logger = require('morgan');
-const db = require('./data/helpers/actionModel')
 const PORT = 7000;
+
+const actionDb = require('./data/helpers/actionModel');
+const projectDb = require('./data/helpers/projectModel');
 
 server.use(
     logger('dev'),
@@ -28,9 +30,9 @@ server.get('/projects', (req, res) => {
 })
 
 // GET REQUEST BY ID
-server.get('./projects/:id', (req, res) => {
-    const { project_id } = req.params;
-    db.id(project_id)
+server.get('/projects/:id', (req, res) => {
+    const { id } = req.params;
+    db.get(id)
         .then(projects => {
             if (projects) {
                 res
@@ -49,27 +51,149 @@ server.get('./projects/:id', (req, res) => {
         })
 })
 
-//DELETE REQUEST
-server.delete('/projecs/:id', (req, res) => {
-    const { id } = req.params;
-    console.log('id', id);
-    db.remove(id)
-        .then(count => {
-            if (count) {
+// POST REQUEST 
+server.post('/', (req, res) => {
+    const action = req.body;
+
+    if(action.project_id && action.description && action.notes){
+        projectDb.get(action.project_id)
+            .then(
+                
+                actionDb.insert(action)
+                    .then(newAction => {
+                        console.log("new action:", newAction)
+                        res.json(newAction)
+                    })
+                    .catch(err => {
+                        res
+                        .status(500)
+                        .json({
+                            message: "There was an error adding action."
+                        })
+                    })
+            )
+            .catch(err=>{
                 res
-                .json({message: "Successfully Deleted"})
-            } else {
-                res
+                .status(404)
+                .json({
+                    message: "That project ID is invalid"
+                })
+            })
+    } else if (action.project_id && action.description) {
+        res
+        .status(400)
+        .json({
+            message: "New actions require notes."
+        })
+    } else if (action.project_id && action.notes) {
+        res
+        .status(400)
+        .json({
+            message: "requires a description."
+        })
+    } else if (action.description && action.notes) {
+        res
+        .status(400)
+        .json({
+            message: "requires a valid project ID."
+        })
+    } else {
+        res
+        .status(400)
+        .json({
+            message: "requires a project ID, description and notes."
+        })
+    }
+
+});
+
+//PUT REQUEST
+
+server.put('/:id', (req, res) => {
+    const {id} = req.params;
+    const action = req.body;
+    
+    if (action.project_id && action.description && action.notes) {
+        actionDb.update(id, action)
+            .then(count => {
+                if ( count === null) {
+                    res
                     .status(404)
-                    .json({message: "This user cannot be deleted"})
-        }
+                    .json({
+                        message: "ID is invalid."
+                    })
+                } else {
+                    actionDb.get(id)
+                        .then(action => {
+                            res.json(action)
+                        })
+                }
+            })
+            .catch(err => {
+                res
+                .status(500)
+                .json({
+                    message: "Unable to update."
+                })
+            })
+    } else if (action.project_id && action.description){
+        res
+        .status(400)
+        .json({
+            message: "Actions need notes."
+        })
+    } else if (action.project_id && action.notes) {
+        res
+        .status(400)
+        .json({
+            message: "needs a description."
+        })
+    } else if (action.notes && action.description) {
+        res
+        .status(400)
+        .json({
+            message: "Actions need a valid project ID."
+        })
+    } else {
+        res
+        .status(400)
+        .json({
+            message: "Needs a valid project ID, name and a description."
+        })
+    }
+});
+
+
+
+//DELETE REQUEST
+server.delete('/:id', (req, res) => {
+    const {id} = req.params;
+    actionDb.get(id)
+        .then(action => {
+            const theAction = action;
+            actionDb.remove(id)
+                .then(count => {
+                    if(count){
+                        res.json(theAction);
+                    }
+                })
         })
         .catch(err => {
             res
-                .status(500)
-                .json({error: "Post can't be deleted"})
+            .status(404)
+            .json({
+                message: "ID is invalid."
+            })
         })
-})
+        .catch(err => {
+            res
+            .status(500)
+            .json({
+                message: "This action cant be deleted."
+            })
+        })
+});
+
 
 
 server.listen(PORT, () => {
